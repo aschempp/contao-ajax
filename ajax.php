@@ -22,7 +22,7 @@
  * @copyright  Andreas Schempp 2009
  * @author     Andreas Schempp <andreas@schempp.ch>
  * @license    http://opensource.org/licenses/lgpl-3.0.html
- * @version    $Id: ajax.php 192 2009-10-19 19:02:54Z aschempp $
+ * @version    $Id$
  */
 
 
