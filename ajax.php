@@ -1,13 +1,15 @@
-<?php
+<?php if (!defined('TL_ROOT')) die('You can not access this file directly!');
 
 /**
- * TYPOlight webCMS
- * Copyright (C) 2005 Leo Feyer
+ * Contao Open Source CMS
+ * Copyright (C) 2005-2010 Leo Feyer
+ *
+ * Formerly known as TYPOlight Open Source CMS.
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation, either
- * version 2.1 of the License, or (at your option) any later version.
+ * version 3 of the License, or (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,10 +18,10 @@
  * 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program. If not, please visit the Free
- * Software Foundation website at http://www.gnu.org/licenses/.
+ * Software Foundation website at <http://www.gnu.org/licenses/>.
  *
  * PHP version 5
- * @copyright  Andreas Schempp 2009
+ * @copyright  Andreas Schempp 2009-2010
  * @author     Andreas Schempp <andreas@schempp.ch>
  * @license    http://opensource.org/licenses/lgpl-3.0.html
  * @version    $Id$
@@ -52,11 +54,7 @@ $_POST = $arrPOST;
 
 
 /**
- * Class Ajax
- *
  * Ajax front end controller.
- * @copyright  Andreas Schempp 2009
- * @author     Andreas Schempp <andreas@schempp.ch>
  */
 class Ajax extends Frontend
 {
@@ -109,7 +107,7 @@ class Ajax extends Frontend
 			$this->output($this->getFormField($this->Input->get('id')));
 		}
 		
-		if (array_key_exists('dispatchAjax', $GLOBALS['TL_HOOKS']) && is_array($GLOBALS['TL_HOOKS']['dispatchAjax']))
+		if (is_array($GLOBALS['TL_HOOKS']['dispatchAjax']))
 		{
 			foreach ($GLOBALS['TL_HOOKS']['dispatchAjax'] as $callback)
 			{
@@ -261,6 +259,11 @@ class Ajax extends Frontend
 	}
 	
 	
+	/**
+	 * Generate a form field
+	 * @param  int
+	 * @return string
+	 */
 	protected function getFormField($strId)
 	{
 		if (!strlen($strId) || !isset($_SESSION['AJAX-FFL'][$strId]))
@@ -287,6 +290,11 @@ class Ajax extends Frontend
 	}
 	
 	
+	/**
+	 * Output data, encode to json and replace insert tags
+	 * @param  mixed
+	 * @return string
+	 */
 	protected function output($varValue)
 	{
 		if (is_array($varValue) || is_object($varValue))
@@ -294,7 +302,7 @@ class Ajax extends Frontend
 			$varValue = json_encode($varValue);
 		}
 		
-		echo $varValue;
+		echo $this->replaceInsertTags($varValue);
 		exit;
 	}
 }
