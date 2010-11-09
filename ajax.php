@@ -79,6 +79,10 @@ class Ajax extends Frontend
 	 */
 	public function run()
 	{
+		// Get the current page object
+		global $objPage;
+		$objPage = $this->getPageDetails((int)$this->Input->get('page'));
+		
 		$this->User->authenticate();
 		
 		// Set language from _GET
