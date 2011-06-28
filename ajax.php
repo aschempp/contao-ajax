@@ -21,7 +21,7 @@
  * Software Foundation website at <http://www.gnu.org/licenses/>.
  *
  * PHP version 5
- * @copyright  Andreas Schempp 2009-2010
+ * @copyright  Andreas Schempp 2009-2011
  * @author     Andreas Schempp <andreas@schempp.ch>
  * @license    http://opensource.org/licenses/lgpl-3.0.html
  * @version    $Id$
@@ -171,9 +171,9 @@ class Ajax extends Frontend
 			}
 
 			$this->import('FrontendUser', 'User');
-			$arrGroups = deserialize($objModule->groups);
+			$groups = deserialize($objModule->groups);
 	
-			if (is_array($arrGroups) && count(array_intersect($this->User->groups, $arrGroups)) < 1)
+			if (!is_array($groups) || count($groups) < 1 || count(array_intersect($groups, $this->User->groups)) < 1)
 			{
 				header('HTTP/1.1 403 Forbidden');
 				return 'Forbidden';
@@ -182,6 +182,7 @@ class Ajax extends Frontend
 
 		$strClass = $this->findFrontendModule($objModule->type);
 
+		// Return if the class does not exist
 		if (!$this->classFileExists($strClass))
 		{
 			$this->log('Module class "'.$GLOBALS['FE_MOD'][$objModule->type].'" (module "'.$objModule->type.'") does not exist', 'Ajax getFrontendModule()', TL_ERROR);
@@ -228,7 +229,7 @@ class Ajax extends Frontend
 		}
 
 		// Protected element
-		if ($objElement->type != 'comments' && !BE_USER_LOGGED_IN && $objElement->protected)
+		if ($objElement->protected && !BE_USER_LOGGED_IN)
 		{
 			if (!FE_USER_LOGGED_IN)
 			{
@@ -237,9 +238,9 @@ class Ajax extends Frontend
 			}
 
 			$this->import('FrontendUser', 'User');
-			$arrGroups = deserialize($objElement->groups);
-	
-			if (is_array($arrGroups) && count(array_intersect($this->User->groups, $arrGroups)) < 1)
+			$groups = deserialize($objElement->groups);
+
+			if (!is_array($groups) || count($groups) < 1 || count(array_intersect($groups, $this->User->groups)) < 1)
 			{
 				header('HTTP/1.1 403 Forbidden');
 				return 'Forbidden';
@@ -248,6 +249,7 @@ class Ajax extends Frontend
 
 		$strClass = $this->findContentElement($objElement->type);
 
+		// Return if the class does not exist
 		if (!$this->classFileExists($strClass))
 		{
 			$this->log('Content element class "'.$strClass.'" (content element "'.$objElement->type.'") does not exist', 'Ajax getContentElement()', TL_ERROR);
@@ -258,8 +260,27 @@ class Ajax extends Frontend
 
 		$objElement->typePrefix = 'ce_';
 		$objElement = new $strClass($objElement);
+		
+		if ($this->Input->get('g') == '1')
+		{
+			$strBuffer = $objElement->generate();
 
-		return $this->Input->get('g') == '1' ? $objElement->generate() : $objElement->generateAjax();
+			// HOOK: add custom logic
+			if (isset($GLOBALS['TL_HOOKS']['getContentElement']) && is_array($GLOBALS['TL_HOOKS']['getContentElement']))
+			{
+				foreach ($GLOBALS['TL_HOOKS']['getContentElement'] as $callback)
+				{
+					$this->import($callback[0]);
+					$strBuffer = $this->$callback[0]->$callback[1]($objElement, $strBuffer);
+				}
+			}
+			
+			return $strBuffer;
+		}
+		else
+		{
+			return $objElement->generateAjax();
+		}
 	}
 	
 	
