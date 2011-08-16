@@ -38,25 +38,44 @@ if (isset($_GET['FE_USER_AUTH']))
 	$_COOKIE['FE_USER_AUTH'] = $_GET['FE_USER_AUTH'];
 }
 
-$arrPOST = $_POST;
-unset($_POST);
-
-
-/**
- * Initialize the system
- */
+// ajax.php is a frontend script
 define('TL_MODE', 'FE');
-require('system/initialize.php');
 
+// Initialize for Contao >= 2.10
+if (version_compare(VERSION, '2.9', '>'))
+{
+	// Start the session so we can access known request tokens
+	@session_start();
 
-// Preserve $_POST data
-$_POST = $arrPOST;
+	// Allow do bypass the token check if a known token is passed in
+	if ($_GET['bypassToken'] == '1' && is_array($_SESSION['REQUEST_TOKEN'][TL_MODE]) && in_array($_POST['REQUEST_TOKEN'], $_SESSION['REQUEST_TOKEN'][TL_MODE]))
+	{
+		define('BYPASS_TOKEN_CHECK', true);
+	}
+
+	// Initialize the system
+	require('system/initialize.php');
+}
+
+// Initialize for Contao <= 2.9
+else
+{
+	$arrPOST = $_POST;
+	unset($_POST);
+
+	// Initialize the system
+	require('system/initialize.php');
+
+	// Preserve $_POST data
+	$_POST = $arrPOST;
+}
+
 
 
 /**
  * Ajax front end controller.
  */
-class Ajax extends Frontend
+class FrontendAjax extends Frontend
 {
 
 	/**
@@ -322,13 +341,44 @@ class Ajax extends Frontend
 	 */
 	protected function output($varValue)
 	{
-		if (is_array($varValue) || is_object($varValue))
+		$varValue = $this->replaceTags($varValue);
+
+		if (version_compare(VERSION, '2.9', '>'))
+		{
+			$varValue = json_encode(array
+			(
+				'token'		=> REQUEST_TOKEN,
+				'content'	=> $varValue,
+			));
+		}
+		elseif (is_array($varValue) || is_object($varValue))
 		{
 			$varValue = json_encode($varValue);
 		}
 		
-		echo $this->replaceInsertTags($varValue);
+		echo $varValue;
 		exit;
+	}
+	
+	
+	/**
+	 * Recursively replace inserttags in the return value
+	 * @param	array|string
+	 * @return	array|string
+	 */
+	private function replaceTags($varValue)
+	{
+		if (is_array($varValue))
+		{
+			foreach( $varValue as $k => $v )
+			{
+				$varValue[$k] = $this->replaceTags($v);
+			}
+			
+			return $varValue;
+		}
+		
+		return $this->replaceInsertTags($varValue);
 	}
 }
 
@@ -336,6 +386,6 @@ class Ajax extends Frontend
 /**
  * Instantiate controller
  */
-$objAjax = new Ajax();
-$objAjax->run();
+$objFrontendAjax = new FrontendAjax();
+$objFrontendAjax->run();
 
