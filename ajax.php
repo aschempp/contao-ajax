@@ -41,32 +41,28 @@ if (isset($_GET['FE_USER_AUTH']))
 // ajax.php is a frontend script
 define('TL_MODE', 'FE');
 
-// Initialize for Contao >= 2.10
-if (version_compare(VERSION, '2.9', '>'))
+// Start the session so we can access known request tokens
+@session_start();
+
+// Allow do bypass the token check if a known token is passed in
+if (isset($_GET['bypassToken']) && is_array($_SESSION['REQUEST_TOKEN'][TL_MODE]) && in_array($_POST['REQUEST_TOKEN'], $_SESSION['REQUEST_TOKEN'][TL_MODE]))
 {
-	// Start the session so we can access known request tokens
-	@session_start();
-
-	// Allow do bypass the token check if a known token is passed in
-	if ($_GET['bypassToken'] == '1' && is_array($_SESSION['REQUEST_TOKEN'][TL_MODE]) && in_array($_POST['REQUEST_TOKEN'], $_SESSION['REQUEST_TOKEN'][TL_MODE]))
-	{
-		define('BYPASS_TOKEN_CHECK', true);
-	}
-
-	// Initialize the system
-	require('system/initialize.php');
+	define('BYPASS_TOKEN_CHECK', true);
 }
 
 // Initialize for Contao <= 2.9
-else
+elseif (!is_array($_SESSION['REQUEST_TOKEN']))
 {
 	$arrPOST = $_POST;
 	unset($_POST);
+}
 
-	// Initialize the system
-	require('system/initialize.php');
+// Initialize the system
+require('system/initialize.php');
 
-	// Preserve $_POST data
+// Preserve $_POST data in Contao <= 2.9
+if (version_compare(VERSION, '2.10', '<'))
+{
 	$_POST = $arrPOST;
 }
 
@@ -375,6 +371,10 @@ class FrontendAjax extends Frontend
 				$varValue[$k] = $this->replaceTags($v);
 			}
 			
+			return $varValue;
+		}
+		elseif (is_object($varValue))
+		{
 			return $varValue;
 		}
 		
