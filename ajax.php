@@ -98,6 +98,21 @@ class FrontendAjax extends Frontend
 		global $objPage;
 		$objPage = $this->getPageDetails((int)$this->Input->get('page'));
 		
+		// Define the static URL constants
+        define('TL_FILES_URL', ($objPage->staticFiles != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticFiles . TL_PATH . '/' : '');
+        define('TL_SCRIPT_URL', ($objPage->staticSystem != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticSystem . TL_PATH . '/' : '');
+        define('TL_PLUGINS_URL', ($objPage->staticPlugins != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticPlugins . TL_PATH . '/' : '');
+
+        // Get the page layout
+        $objLayout = $this->getPageLayout($objPage->layout);
+        $objPage->template = strlen($objLayout->template) ? $objLayout->template : 'fe_page';
+        $objPage->templateGroup = $objLayout->templates;
+
+        // Store the output format
+        list($strFormat, $strVariant) = explode('_', $objLayout->doctype);
+        $objPage->outputFormat = $strFormat;
+        $objPage->outputVariant = $strVariant;
+		
 		$this->User->authenticate();
 		
 		// Set language from _GET
