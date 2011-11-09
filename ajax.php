@@ -45,13 +45,13 @@ define('TL_MODE', 'FE');
 @session_start();
 
 // Allow do bypass the token check if a known token is passed in
-if (isset($_GET['bypassToken']) && is_array($_SESSION['REQUEST_TOKEN'][TL_MODE]) && in_array($_POST['REQUEST_TOKEN'], $_SESSION['REQUEST_TOKEN'][TL_MODE]))
+if (isset($_GET['bypassToken']) && ((is_array($_SESSION['REQUEST_TOKEN'][TL_MODE]) && in_array($_POST['REQUEST_TOKEN'], $_SESSION['REQUEST_TOKEN'][TL_MODE])) || $_SESSION['REQUEST_TOKEN'][TL_MODE] == $_POST['REQUEST_TOKEN']))
 {
 	define('BYPASS_TOKEN_CHECK', true);
 }
 
 // Initialize for Contao <= 2.9
-elseif (!is_array($_SESSION['REQUEST_TOKEN']))
+elseif (!isset($_SESSION['REQUEST_TOKEN']))
 {
 	$arrPOST = $_POST;
 	unset($_POST);
@@ -71,7 +71,7 @@ if (version_compare(VERSION, '2.10', '<'))
 /**
  * Ajax front end controller.
  */
-class FrontendAjax extends Frontend
+class PageAjax extends PageRegular
 {
 
 	/**
@@ -97,21 +97,24 @@ class FrontendAjax extends Frontend
 		// Get the current page object
 		global $objPage;
 		$objPage = $this->getPageDetails((int)$this->Input->get('page'));
-		
-		// Define the static URL constants
-        define('TL_FILES_URL', ($objPage->staticFiles != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticFiles . TL_PATH . '/' : '');
-        define('TL_SCRIPT_URL', ($objPage->staticSystem != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticSystem . TL_PATH . '/' : '');
-        define('TL_PLUGINS_URL', ($objPage->staticPlugins != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticPlugins . TL_PATH . '/' : '');
 
-        // Get the page layout
-        $objLayout = $this->getPageLayout($objPage->layout);
-        $objPage->template = strlen($objLayout->template) ? $objLayout->template : 'fe_page';
-        $objPage->templateGroup = $objLayout->templates;
-
-        // Store the output format
-        list($strFormat, $strVariant) = explode('_', $objLayout->doctype);
-        $objPage->outputFormat = $strFormat;
-        $objPage->outputVariant = $strVariant;
+		if (version_compare(VERSION, '2.9', '>'))
+		{
+			// Define the static URL constants
+	        define('TL_FILES_URL', ($objPage->staticFiles != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticFiles . TL_PATH . '/' : '');
+	        define('TL_SCRIPT_URL', ($objPage->staticSystem != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticSystem . TL_PATH . '/' : '');
+	        define('TL_PLUGINS_URL', ($objPage->staticPlugins != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticPlugins . TL_PATH . '/' : '');
+	
+	        // Get the page layout
+	        $objLayout = $this->getPageLayout($objPage->layout);
+	        $objPage->template = strlen($objLayout->template) ? $objLayout->template : 'fe_page';
+	        $objPage->templateGroup = $objLayout->templates;
+	
+	        // Store the output format
+	        list($strFormat, $strVariant) = explode('_', $objLayout->doctype);
+	        $objPage->outputFormat = $strFormat;
+	        $objPage->outputVariant = $strVariant;
+        }
 		
 		$this->User->authenticate();
 		
@@ -401,6 +404,6 @@ class FrontendAjax extends Frontend
 /**
  * Instantiate controller
  */
-$objFrontendAjax = new FrontendAjax();
-$objFrontendAjax->run();
+$objPageAjax = new PageAjax();
+$objPageAjax->run();
 
