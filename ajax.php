@@ -57,6 +57,9 @@ elseif (!isset($_SESSION['REQUEST_TOKEN']))
 	unset($_POST);
 }
 
+// Close session so Contao's initalization routine can use ini_set()
+session_write_close();
+
 // Initialize the system
 require('system/initialize.php');
 
