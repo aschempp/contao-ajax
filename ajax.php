@@ -120,6 +120,8 @@ class PageAjax extends PageRegular
 				$objPage->outputFormat = $strFormat;
 				$objPage->outputVariant = $strVariant;
 			}
+
+			$GLOBALS['TL_LANGUAGE'] = $objPage->language;
 		}
 		
 		$this->User->authenticate();
