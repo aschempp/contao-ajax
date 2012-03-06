@@ -144,7 +144,7 @@ class PageAjax extends PageRegular
 		
 		if ($this->Input->get('action') == 'cte')
 		{
-			$this->output($this->getContentElement($this->Input->get('id')));
+			$this->output($this->getElement($this->Input->get('id')));
 		}
 		
 		if ($this->Input->get('action') == 'ffl')
@@ -244,7 +244,7 @@ class PageAjax extends PageRegular
 	 * @param integer
 	 * @return string
 	 */
-	protected function getContentElement($intId)
+	protected function getElement($intId)
 	{
 		if (!strlen($intId) || $intId < 1)
 		{
