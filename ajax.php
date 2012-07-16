@@ -24,7 +24,7 @@
  * @copyright  Andreas Schempp 2009-2011
  * @author     Andreas Schempp <andreas@schempp.ch>
  * @license    http://opensource.org/licenses/lgpl-3.0.html
- * @version    $Id$
+ * @version    $Id: ajax.php 405 2012-01-09 14:48:58Z aschempp $
  */
 
 
@@ -97,11 +97,23 @@ class PageAjax extends PageRegular
 	 */
 	public function run()
 	{
-		if ($this->Input->get('page') != '')
+		$pageId = false;
+		if($this->Input->get('pageId'))
+		{
+			$pageId = $this->Input->get('pageId');
+		}
+		else if($this->Input->get('page'))
+		{
+			$pageId = $this->Input->get('page');
+		}
+
+
+
+		if ($pageId)
 		{
 			// Get the current page object
 			global $objPage;
-			$objPage = $this->getPageDetails((int)$this->Input->get('page'));
+			$objPage = $this->getPageDetails((int)$pageId);
 
 			if (version_compare(VERSION, '2.9', '>'))
 			{
@@ -244,7 +256,7 @@ class PageAjax extends PageRegular
 	 * @param integer
 	 * @return string
 	 */
-	protected function getElement($intId)
+	protected function getContentElement($intId)
 	{
 		if (!strlen($intId) || $intId < 1)
 		{
