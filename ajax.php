@@ -10,21 +10,20 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation, either
  * version 3 of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program. If not, please visit the Free
  * Software Foundation website at <http://www.gnu.org/licenses/>.
  *
  * PHP version 5
- * @copyright  Andreas Schempp 2009-2011
+ * @copyright  Andreas Schempp 2009-2012
  * @author     Andreas Schempp <andreas@schempp.ch>
  * @license    http://opensource.org/licenses/lgpl-3.0.html
- * @version    $Id$
  */
 
 
@@ -97,11 +96,18 @@ class PageAjax extends PageRegular
 	 */
 	public function run()
 	{
-		if ($this->Input->get('page') != '')
+		$intPage = (int) $this->Input->get('pageId');
+
+		if (!$intPage)
+		{
+			$intPage = (int) $this->Input->get('page');
+		}
+
+		if ($intPage > 0)
 		{
 			// Get the current page object
 			global $objPage;
-			$objPage = $this->getPageDetails((int)$this->Input->get('page'));
+			$objPage = $this->getPageDetails($intPage);
 
 			if (version_compare(VERSION, '2.9', '>'))
 			{
@@ -120,36 +126,38 @@ class PageAjax extends PageRegular
 				$objPage->outputFormat = $strFormat;
 				$objPage->outputVariant = $strVariant;
 			}
+
+			$GLOBALS['TL_LANGUAGE'] = $objPage->language;
 		}
-		
+
 		$this->User->authenticate();
-		
+
 		// Set language from _GET
 		if (strlen($this->Input->get('language')))
 		{
 			$GLOBALS['TL_LANGUAGE'] = $this->Input->get('language');
 		}
-		
+
 		unset($GLOBALS['TL_HOOKS']['outputFrontendTemplate']);
 		unset($GLOBALS['TL_HOOKS']['parseFrontendTemplate']);
-		
+
 		$this->loadLanguageFile('default');
-		
+
 		if ($this->Input->get('action') == 'fmd')
 		{
 			$this->output($this->getFrontendModule($this->Input->get('id')));
 		}
-		
+
 		if ($this->Input->get('action') == 'cte')
 		{
-			$this->output($this->getContentElement($this->Input->get('id')));
+			$this->output($this->getElement($this->Input->get('id')));
 		}
-		
+
 		if ($this->Input->get('action') == 'ffl')
 		{
 			$this->output($this->getFormField($this->Input->get('id')));
 		}
-		
+
 		if (is_array($GLOBALS['TL_HOOKS']['dispatchAjax']))
 		{
 			foreach ($GLOBALS['TL_HOOKS']['dispatchAjax'] as $callback)
@@ -163,12 +171,12 @@ class PageAjax extends PageRegular
 				}
 			}
 		}
-		
+
 		header('HTTP/1.1 412 Precondition Failed');
 		die('Invalid AJAX call.');
 	}
-	
-	
+
+
 	/**
 	 * Generate a front end module and return it as HTML string
 	 * @param integer
@@ -182,7 +190,7 @@ class PageAjax extends PageRegular
 			header('HTTP/1.1 412 Precondition Failed');
 			return 'Missing frontend module ID';
 		}
-		
+
 		$objModule = $this->Database->prepare("SELECT * FROM tl_module WHERE id=?")
 									->limit(1)
 									->execute($intId);
@@ -211,7 +219,7 @@ class PageAjax extends PageRegular
 
 			$this->import('FrontendUser', 'User');
 			$groups = deserialize($objModule->groups);
-	
+
 			if (!is_array($groups) || count($groups) < 1 || count(array_intersect($groups, $this->User->groups)) < 1)
 			{
 				header('HTTP/1.1 403 Forbidden');
@@ -225,7 +233,7 @@ class PageAjax extends PageRegular
 		if (!$this->classFileExists($strClass))
 		{
 			$this->log('Module class "'.$GLOBALS['FE_MOD'][$objModule->type].'" (module "'.$objModule->type.'") does not exist', 'Ajax getFrontendModule()', TL_ERROR);
-			
+
 			header('HTTP/1.1 404 Not Found');
 			return 'Frontend module class does not exist';
 		}
@@ -235,14 +243,14 @@ class PageAjax extends PageRegular
 
 		return $this->Input->get('g') == '1' ? $objModule->generate() : $objModule->generateAjax();
 	}
-	
-	
+
+
 	/**
 	 * Generate a content element return it as HTML string
 	 * @param integer
 	 * @return string
 	 */
-	protected function getContentElement($intId)
+	protected function getElement($intId)
 	{
 		if (!strlen($intId) || $intId < 1)
 		{
@@ -292,14 +300,14 @@ class PageAjax extends PageRegular
 		if (!$this->classFileExists($strClass))
 		{
 			$this->log('Content element class "'.$strClass.'" (content element "'.$objElement->type.'") does not exist', 'Ajax getContentElement()', TL_ERROR);
-			
+
 			header('HTTP/1.1 404 Not Found');
 			return 'Content element class does not exist';
 		}
 
 		$objElement->typePrefix = 'ce_';
 		$objElement = new $strClass($objElement);
-		
+
 		if ($this->Input->get('g') == '1')
 		{
 			$strBuffer = $objElement->generate();
@@ -313,7 +321,7 @@ class PageAjax extends PageRegular
 					$strBuffer = $this->$callback[0]->$callback[1]($objElement, $strBuffer);
 				}
 			}
-			
+
 			return $strBuffer;
 		}
 		else
@@ -321,8 +329,8 @@ class PageAjax extends PageRegular
 			return $objElement->generateAjax();
 		}
 	}
-	
-	
+
+
 	/**
 	 * Generate a form field
 	 * @param  int
@@ -335,15 +343,15 @@ class PageAjax extends PageRegular
 			header('HTTP/1.1 412 Precondition Failed');
 			return 'Missing form field ID';
 		}
-		
+
 		$arrConfig = $_SESSION['AJAX-FFL'][$strId];
-		
+
 		$strClass = strlen($GLOBALS['TL_FFL'][$arrConfig['type']]) ? $GLOBALS['TL_FFL'][$arrConfig['type']] : $GLOBALS['BE_FFL'][$arrConfig['type']];
-		
+
 		if (!$this->classFileExists($strClass))
 		{
 			$this->log('Form field class "'.$strClass.'" (form field "'.$arrConfig['type'].'") does not exist', 'Ajax getFormField()', TL_ERROR);
-			
+
 			header('HTTP/1.1 404 Not Found');
 			return 'Form field class does not exist';
 		}
@@ -352,8 +360,8 @@ class PageAjax extends PageRegular
 
 		return $objField->generateAjax();
 	}
-	
-	
+
+
 	/**
 	 * Output data, encode to json and replace insert tags
 	 * @param  mixed
@@ -375,12 +383,12 @@ class PageAjax extends PageRegular
 		{
 			$varValue = json_encode($varValue);
 		}
-		
+
 		echo $varValue;
 		exit;
 	}
-	
-	
+
+
 	/**
 	 * Recursively replace inserttags in the return value
 	 * @param	array|string
@@ -394,14 +402,14 @@ class PageAjax extends PageRegular
 			{
 				$varValue[$k] = $this->replaceTags($v);
 			}
-			
+
 			return $varValue;
 		}
 		elseif (is_object($varValue))
 		{
 			return $varValue;
 		}
-		
+
 		return $this->replaceInsertTags($varValue);
 	}
 }
