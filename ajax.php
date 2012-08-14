@@ -96,23 +96,18 @@ class PageAjax extends PageRegular
 	 */
 	public function run()
 	{
-		$pageId = false;
-		if($this->Input->get('pageId'))
+		$intPage = (int) $this->Input->get('pageId');
+
+		if (!$intPage)
 		{
-			$pageId = $this->Input->get('pageId');
-		}
-		else if($this->Input->get('page'))
-		{
-			$pageId = $this->Input->get('page');
+			$intPage = (int) $this->Input->get('page');
 		}
 
-
-
-		if ($pageId)
+		if ($intPage > 0)
 		{
 			// Get the current page object
 			global $objPage;
-			$objPage = $this->getPageDetails((int)$pageId);
+			$objPage = $this->getPageDetails($intPage);
 
 			if (version_compare(VERSION, '2.9', '>'))
 			{
