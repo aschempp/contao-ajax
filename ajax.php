@@ -127,6 +127,25 @@ class PageAjax extends PageRegular
 				$objPage->outputVariant = $strVariant;
 			}
 
+            if (version_compare(VERSION, '2.11', '>='))
+            {
+                // Use the global date format if none is set
+                if ($objPage->dateFormat == '')
+                {
+                        $objPage->dateFormat = $GLOBALS['TL_CONFIG']['dateFormat'];
+                }                
+
+                if ($objPage->timeFormat == '')
+                {                
+                        $objPage->timeFormat = $GLOBALS['TL_CONFIG']['timeFormat'];
+                }                
+
+                if ($objPage->datimFormat == '')
+                {                
+                        $objPage->datimFormat = $GLOBALS['TL_CONFIG']['datimFormat'];
+                }
+            }
+
 			$GLOBALS['TL_LANGUAGE'] = $objPage->language;
 		}
 
