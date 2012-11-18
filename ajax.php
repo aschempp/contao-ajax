@@ -127,6 +127,33 @@ class PageAjax extends PageRegular
 				$objPage->outputVariant = $strVariant;
 			}
 
+			if (version_compare(VERSION, '2.11', '>='))
+			{
+				// Use the global date format if none is set
+				if ($objPage->dateFormat == '')
+				{
+					$objPage->dateFormat = $GLOBALS['TL_CONFIG']['dateFormat'];
+				}
+				if ($objPage->timeFormat == '')
+				{
+					$objPage->timeFormat = $GLOBALS['TL_CONFIG']['timeFormat'];
+				}
+				if ($objPage->datimFormat == '')
+				{
+					$objPage->datimFormat = $GLOBALS['TL_CONFIG']['datimFormat'];
+				}
+
+				// Set the admin e-mail address
+				if ($objPage->adminEmail != '')
+				{
+					list($GLOBALS['TL_ADMIN_NAME'], $GLOBALS['TL_ADMIN_EMAIL']) = $this->splitFriendlyName($objPage->adminEmail);
+				}
+				else
+				{
+					list($GLOBALS['TL_ADMIN_NAME'], $GLOBALS['TL_ADMIN_EMAIL']) = $this->splitFriendlyName($GLOBALS['TL_CONFIG']['adminEmail']);
+				}
+			}
+
 			$GLOBALS['TL_LANGUAGE'] = $objPage->language;
 		}
 
