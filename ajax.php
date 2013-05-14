@@ -117,7 +117,7 @@ class PageAjax extends PageRegular
 				define('TL_PLUGINS_URL', ($objPage->staticPlugins != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticPlugins . TL_PATH . '/' : '');
 
 				// Get the page layout
-				$objLayout = $this->getPageLayout($objPage->layout);
+				$objLayout = $this->getPageLayout(version_compare(VERSION, '3.0', '>=') ? $objPage : $objPage->layout);
 				$objPage->template = strlen($objLayout->template) ? $objLayout->template : 'fe_page';
 				$objPage->templateGroup = $objLayout->templates;
 
